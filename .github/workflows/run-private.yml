@@ -1,0 +1,41 @@
+name: Run DiscordBot from Private Repo
+
+on:
+  schedule:
+    - cron: '0 * * * *'    # 每小时 00 分运行
+    - cron: '30 * * * *'   # 每小时 30 分运行
+  workflow_dispatch:       # 支持手动触发
+
+jobs:
+  run-discordbot:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clone private repo securely
+      run: |
+        git clone https://x-access-token:${{ secrets.PRIVATE_REPO_PAT }}@github.com/BILILICHENG/DanceVrushScoresDataPri.git private-repo
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        cd private-repo
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: Run discordbot.py
+      run: |
+        cd private-repo
+        python discordbot.py
+
+    - name: Commit and push any changes back (if any)
+      run: |
+        cd private-repo
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add .
+        git commit -m "Auto update from GitHub Actions at $(date)" || echo "No changes to commit"
+        git push origin main
