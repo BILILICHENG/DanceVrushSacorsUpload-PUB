@@ -2,9 +2,9 @@ name: Run DiscordBot from Private Repo
 
 on:
   schedule:
-    - cron: '0 * * * *'    # 每小时 00 分运行
-    - cron: '30 * * * *'   # 每小时 30 分运行
-  workflow_dispatch:       # 支持手动触发
+    - cron: '0 * * * *'
+    - cron: '30 * * * *'
+  workflow_dispatch:
 
 jobs:
   run-discordbot:
@@ -31,7 +31,12 @@ jobs:
         cd private-repo
         python discordbot.py
 
-    - name: Commit and push any changes back (if any)
+    - name: Run uploadbot.py
+      run: |
+        cd private-repo
+        python uploadbot.py
+
+    - name: Commit and push any changes back to private repo
       run: |
         cd private-repo
         git config user.name "github-actions[bot]"
@@ -39,3 +44,22 @@ jobs:
         git add .
         git commit -m "Auto update from GitHub Actions at $(date)" || echo "No changes to commit"
         git push origin main
+
+    - name: Push online.txt to public repo
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+        git clone https://x-access-token:${{ secrets.PRIVATE_REPO_PAT }}@github.com/BILILICHENG/save-test.git public-repo
+
+        cp private-repo/playerlist/online.txt public-repo/playerlist/online.txt
+
+        cd public-repo
+        git add playerlist/online.txt
+
+        if git diff --cached --quiet; then
+          echo "No changes in online.txt, skipping commit."
+        else
+          git commit -m "Sync online.txt from private repo at $(date)"
+          git push origin main
+        fi
