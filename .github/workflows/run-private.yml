@@ -2,9 +2,7 @@ name: Run DiscordBot from Private Repo
 
 on:
   schedule:
-    - cron: '0 * * * *'
-    - cron: '20 * * * *'
-    - cron: '40 * * * *'
+    - cron: '0 15 * * *' 
   workflow_dispatch:
 
 jobs:
