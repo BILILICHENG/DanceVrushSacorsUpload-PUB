@@ -1,0 +1,60 @@
+name: Process Discord Data and Update Files
+
+on:
+  schedule:
+    - cron: '0 15 1 * *'
+  workflow_dispatch:
+
+jobs:
+  process-and-update:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: BILILICHENG/friendmatch
+        token: ${{ secrets.PRIVATE_REPO_PAT }}
+        path: private-repo
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - run: |
+        cd private-repo
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        fi
+        python 1.py
+        python 2.py
+
+    - run: |
+        cd private-repo
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        if git status --porcelain | grep .; then
+          git add .
+          git commit -m "Auto-update: $(date +'%Y-%m-%d %H:%M:%S')"
+          git push
+        fi
+
+    - uses: actions/checkout@v4
+      with:
+        repository: BILILICHENG/DanceVrushSacorsUpload-PUB
+        token: ${{ secrets.PRIVATE_REPO_PAT }}
+        path: public-repo
+
+    - run: |
+        if [ -f private-repo/playerdate/onlinealldata.txt ]; then
+          if ! cmp -s private-repo/playerdate/onlinealldata.txt public-repo/onlinealldata.txt 2>/dev/null; then
+            cp private-repo/playerdate/onlinealldata.txt public-repo/onlinealldata.txt
+            cd public-repo
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git add onlinealldata.txt
+            git commit -m "Update onlinealldata.txt $(date +'%Y-%m-%d %H:%M:%S')"
+            git push
+          fi
+        fi
+
+    - run: rm -rf private-repo public-repo
