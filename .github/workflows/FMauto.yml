@@ -2,7 +2,7 @@ name: Process Discord Data and Update Files
 
 on:
   schedule:
-    - cron: '0 15 1 * *'
+    - cron: '0 15 * * *'
   workflow_dispatch:
 
 jobs:
@@ -23,19 +23,19 @@ jobs:
     - run: |
         cd private-repo
         if [ -f requirements.txt ]; then
-          pip install -r requirements.txt
+          pip install -r requirements.txt > /dev/null 2>&1
         fi
-        python 1.py
-        python 2.py
+        python 1.py > /dev/null 2>&1
+        python 2.py > /dev/null 2>&1
 
     - run: |
         cd private-repo
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         if git status --porcelain | grep .; then
-          git add .
-          git commit -m "Auto-update: $(date +'%Y-%m-%d %H:%M:%S')"
-          git push
+          git add . > /dev/null 2>&1
+          git commit -m "Auto-update: $(date +'%Y-%m-%d %H:%M:%S')" > /dev/null 2>&1
+          git push > /dev/null 2>&1
         fi
 
     - uses: actions/checkout@v4
@@ -51,9 +51,9 @@ jobs:
             cd public-repo
             git config --global user.name "GitHub Actions"
             git config --global user.email "actions@github.com"
-            git add onlinealldata.txt
-            git commit -m "Update onlinealldata.txt $(date +'%Y-%m-%d %H:%M:%S')"
-            git push
+            git add onlinealldata.txt > /dev/null 2>&1
+            git commit -m "Update onlinealldata.txt $(date +'%Y-%m-%d %H:%M:%S')" > /dev/null 2>&1
+            git push > /dev/null 2>&1
           fi
         fi
 
