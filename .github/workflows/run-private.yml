@@ -2,7 +2,7 @@ name: Run DiscordBot from Private Repo
 
 on:
   schedule:
-    - cron: '0 15 1 * *' 
+    - cron: '0 15 1 * *'
   workflow_dispatch:
 
 jobs:
@@ -10,55 +10,50 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Clone private repo securely
-      run: |
+    - run: |
         git clone https://x-access-token:${{ secrets.PRIVATE_REPO_PAT }}@github.com/BILILICHENG/DanceVrushScoresDataPri.git private-repo
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v5
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - name: Install dependencies
-      run: |
+    - run: |
         cd private-repo
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        python -m pip install --upgrade pip > /dev/null 2>&1
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt > /dev/null 2>&1
+        fi
 
-    - name: Run discordbot.py
-      run: |
+    - run: |
         cd private-repo
-        python discordbot.py
+        python discordbot.py > /dev/null 2>&1
 
-    - name: Run uploadbot.py
-      run: |
+    - run: |
         cd private-repo
-        python uploadbot.py
+        python uploadbot.py > /dev/null 2>&1
 
-    - name: Commit and push any changes back to private repo
-      run: |
+    - run: |
         cd private-repo
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add .
-        git commit -m "Auto update from GitHub Actions at $(date)" || echo "No changes to commit"
-        git push origin main
+        if git status --porcelain | grep .; then
+          git add . > /dev/null 2>&1
+          git commit -m "Auto update from GitHub Actions at $(date)" > /dev/null 2>&1
+          git push origin main > /dev/null 2>&1
+        fi
 
-    - name: Push online.txt to public repo
-      run: |
+    - run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
         git clone https://x-access-token:${{ secrets.PRIVATE_REPO_PAT }}@github.com/BILILICHENG/save-test.git public-repo
-
-        cp private-repo/playerlist/online.txt public-repo/playerlist/online.txt
-
-        cd public-repo
-        git add playerlist/online.txt
-
-        if git diff --cached --quiet; then
-          echo "No changes in online.txt, skipping commit."
-        else
-          git commit -m "Sync online.txt from private repo at $(date)"
-          git push origin master
+        if [ -f private-repo/playerlist/online.txt ]; then
+          if ! cmp -s private-repo/playerlist/online.txt public-repo/playerlist/online.txt 2>/dev/null; then
+            cp private-repo/playerlist/online.txt public-repo/playerlist/online.txt
+            cd public-repo
+            git add playerlist/online.txt > /dev/null 2>&1
+            git commit -m "Sync online.txt from private repo at $(date)" > /dev/null 2>&1
+            git push origin master > /dev/null 2>&1
+          fi
         fi
+
+    - run: rm -rf private-repo public-repo
